@@ -19,7 +19,7 @@ public class UnauthorizedController {
 
     @PostMapping("/user")
     public ResponseEntity<DPMUser> getUsers(@RequestBody AuthRequest request) {
-        var response = repository.findById(request.id());
+        var response = repository.findById(request.username());
         return ResponseEntity.ok(response.orElse(null));
     }
 }

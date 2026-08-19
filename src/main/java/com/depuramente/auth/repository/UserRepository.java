@@ -1,6 +1,7 @@
 package com.depuramente.auth.repository;
 
 import com.depuramente.auth.model.DPMUser;
+
 import java.util.Optional;
 
 public interface UserRepository {

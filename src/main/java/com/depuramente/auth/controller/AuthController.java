@@ -1,9 +1,7 @@
 package com.depuramente.auth.controller;
 
 import com.depuramente.auth.dto.*;
-import com.depuramente.auth.model.RefreshToken;
 import com.depuramente.auth.service.AuthService;
-import com.depuramente.auth.service.RefreshTokenService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,11 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/auth")
 public class AuthController {
     private final AuthService authService;
-    private final RefreshTokenService refreshService;
 
-    public AuthController(AuthService authService, RefreshTokenService refreshService) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.refreshService = refreshService;
     }
 
     @PostMapping("/register")
@@ -33,7 +29,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<RefreshToken> refresh(@RequestBody RefreshTokenRequest request) {
-        return ResponseEntity.ok(refreshService.create(request.username()));
+    public ResponseEntity<TokenResponse> refresh(@RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(authService.refresh(request.refreshToken()));
     }
 }

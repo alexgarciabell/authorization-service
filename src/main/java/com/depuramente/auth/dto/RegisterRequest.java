@@ -9,5 +9,5 @@ public record RegisterRequest(
         String alias,
         String password,
         Set<DPMRole> roles
-        ) {
+) {
 }

@@ -12,9 +12,9 @@ import java.time.temporal.ChronoUnit;
 public class JWTProperties {
     private String secret;
 
-    @DurationUnit(ChronoUnit.MINUTES)
+    @DurationUnit(ChronoUnit.SECONDS)
     private Duration tokenExpiration;
-    @DurationUnit(ChronoUnit.DAYS)
+    @DurationUnit(ChronoUnit.SECONDS)
     private Duration refreshTokenExpiration;
 
     public String getSecret() {

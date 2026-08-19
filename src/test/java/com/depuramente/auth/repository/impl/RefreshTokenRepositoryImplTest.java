@@ -45,7 +45,7 @@ class RefreshTokenRepositoryImplTest {
 
     @Test
     void saveDelegatesToTable() {
-        RefreshToken token = token("id-1", "user-1", "value-1");
+        RefreshToken token = token("username-1", "user-1", "value-1");
 
         repository.save(token);
 
@@ -55,10 +55,10 @@ class RefreshTokenRepositoryImplTest {
 
     @Test
     void findByIdReturnsTokenAndBuildsCompositeKey() {
-        RefreshToken token = token("id-1", "user-1", "value-1");
+        RefreshToken token = token("username-1", "user-1", "value-1");
         when(table.getItem(any(Key.class))).thenReturn(token);
 
-        Optional<RefreshToken> result = repository.findById("user-1", "id-1");
+        Optional<RefreshToken> result = repository.findById("user-1", "username-1");
 
         assertTrue(result.isPresent());
         assertSame(token, result.get());
@@ -66,7 +66,7 @@ class RefreshTokenRepositoryImplTest {
         ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
         verify(table).getItem(keyCaptor.capture());
         assertEquals("user-1", keyCaptor.getValue().partitionKeyValue().s());
-        assertEquals("id-1", keyCaptor.getValue().sortKeyValue().orElseThrow().s());
+        assertEquals("username-1", keyCaptor.getValue().sortKeyValue().orElseThrow().s());
         verifyNoMoreInteractions(table);
     }
 
@@ -82,8 +82,8 @@ class RefreshTokenRepositoryImplTest {
 
     @Test
     void findByTokenReturnsMatchingToken() {
-        RefreshToken matching = token("id-1", "user-1", "value-1");
-        RefreshToken other = token("id-2", "user-2", "value-2");
+        RefreshToken matching = token("username-1", "user-1", "value-1");
+        RefreshToken other = token("username-2", "user-2", "value-2");
         when(table.scan()).thenReturn(pages);
         when(pages.items()).thenReturn(items);
         when(items.stream()).thenReturn(Stream.of(other, matching));
@@ -102,7 +102,7 @@ class RefreshTokenRepositoryImplTest {
     void findByTokenReturnsEmptyWhenTokenIsNotFound() {
         when(table.scan()).thenReturn(pages);
         when(pages.items()).thenReturn(items);
-        when(items.stream()).thenReturn(Stream.of(token("id-1", "user-1", "value-1")));
+        when(items.stream()).thenReturn(Stream.of(token("username-1", "user-1", "value-1")));
 
         Optional<RefreshToken> result = repository.findByToken("missing");
 
@@ -116,8 +116,8 @@ class RefreshTokenRepositoryImplTest {
     @Test
     void findAllByUsernameReturnsItemsFromPartitionQuery() {
         List<RefreshToken> tokens = List.of(
-                token("id-1", "user-1", "value-1"),
-                token("id-2", "user-1", "value-2")
+                token("username-1", "user-1", "value-1"),
+                token("username-2", "user-1", "value-2")
         );
         when(table.query(any(QueryEnhancedRequest.class))).thenReturn(pages);
         when(pages.items()).thenReturn(items);
@@ -138,12 +138,12 @@ class RefreshTokenRepositoryImplTest {
 
     @Test
     void deleteDelegatesToTableWithCompositeKey() {
-        repository.delete("user-1", "id-1");
+        repository.delete("user-1", "username-1");
 
         ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
         verify(table).deleteItem(keyCaptor.capture());
         assertEquals("user-1", keyCaptor.getValue().partitionKeyValue().s());
-        assertEquals("id-1", keyCaptor.getValue().sortKeyValue().orElseThrow().s());
+        assertEquals("username-1", keyCaptor.getValue().sortKeyValue().orElseThrow().s());
         verifyNoMoreInteractions(table);
     }
 

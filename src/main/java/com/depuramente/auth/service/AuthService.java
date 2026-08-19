@@ -9,7 +9,6 @@ import com.depuramente.auth.model.DPMUser;
 import com.depuramente.auth.model.RefreshToken;
 import com.depuramente.auth.repository.UserRepository;
 import com.depuramente.auth.util.EmailValidator;
-import com.depuramente.auth.util.JwtUtil;
 import com.depuramente.auth.util.PasswordValidator;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,14 +28,14 @@ public class AuthService {
     private final UserRepository userRepo;
     private final RefreshTokenService refreshTokenService;
     private final BCryptPasswordEncoder encoder;
-    private final JwtUtil jwtUtil;
+    private final JwtService jwtService;
     private final JWTProperties jwtProperties;
 
-    public AuthService(UserRepository userRepo, RefreshTokenService refreshTokenService, BCryptPasswordEncoder encoder, JwtUtil jwtUtil, JWTProperties jwtProperties) {
+    public AuthService(UserRepository userRepo, RefreshTokenService refreshTokenService, BCryptPasswordEncoder encoder, JwtService jwtService, JWTProperties jwtProperties) {
         this.userRepo = userRepo;
         this.refreshTokenService = refreshTokenService;
         this.encoder = encoder;
-        this.jwtUtil = jwtUtil;
+        this.jwtService = jwtService;
         this.jwtProperties = jwtProperties;
     }
 
@@ -85,17 +84,42 @@ public class AuthService {
      */
     public TokenResponse login(AuthRequest request) {
 
-        DPMUser user = userRepo.findById(request.id())
+        DPMUser user = userRepo.findById(request.username())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (!encoder.matches(request.password(), user.getPassword()))
             throw new IllegalArgumentException("Invalid credentials");
 
-        String accessToken = jwtUtil.generateAccessToken(user.getUsername(), user.getRoles());
+        String accessToken = jwtService.generateAccessToken(user.getUsername(), user.getRoles());
         RefreshToken refreshToken = refreshTokenService.create(user.getUsername());
 
         return new TokenResponse(accessToken, refreshToken.getToken(), jwtProperties.getTokenExpiration().getSeconds(), "Bearer", user.getUsername(), user.getRoles());
 
+    }
+
+    /**
+     * Validates a refresh token and issues a new access/refresh-token pair.
+     * The username is taken from the persisted refresh token rather than from
+     * the request, so a caller cannot refresh a token for another user.
+     */
+    public TokenResponse refresh(String refreshToken) {
+        RefreshToken currentToken = refreshTokenService.validate(refreshToken);
+        DPMUser user = userRepo.findById(currentToken.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String accessToken = jwtService.generateAccessToken(user.getUsername(), user.getRoles());
+
+        refreshTokenService.revoke(refreshToken);
+        RefreshToken nextRefreshToken = refreshTokenService.create(user.getUsername());
+
+        return new TokenResponse(
+                accessToken,
+                nextRefreshToken.getToken(),
+                jwtProperties.getTokenExpiration().getSeconds(),
+                "Bearer",
+                user.getUsername(),
+                user.getRoles()
+        );
     }
 
 }

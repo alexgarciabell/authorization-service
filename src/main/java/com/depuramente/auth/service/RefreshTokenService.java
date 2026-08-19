@@ -3,8 +3,6 @@ package com.depuramente.auth.service;
 import com.depuramente.auth.config.JWTProperties;
 import com.depuramente.auth.model.RefreshToken;
 import com.depuramente.auth.repository.RefreshTokenRepository;
-import com.depuramente.auth.repository.UserRepository;
-import com.depuramente.auth.util.JwtUtil;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;

@@ -7,5 +7,5 @@ import java.util.Set;
 public record RegisterResponse(
         String username,
         Set<DPMRole> roles
-        ) {
+) {
 }

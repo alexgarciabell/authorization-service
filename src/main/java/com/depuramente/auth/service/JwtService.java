@@ -1,4 +1,4 @@
-package com.depuramente.auth.util;
+package com.depuramente.auth.service;
 
 import com.depuramente.auth.config.JWTProperties;
 import com.depuramente.auth.model.DPMRole;
@@ -19,13 +19,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-public class JwtUtil {
-    private final static Logger LOG = LoggerFactory.getLogger(JwtUtil.class);
+public class JwtService {
+    private final static Logger LOG = LoggerFactory.getLogger(JwtService.class);
+    private static final String ROLES = "roles";
     private final JWTProperties jwtProperties;
     private final SecretKey key;
-    private static final String ROLES = "roles";
 
-    public JwtUtil(JWTProperties jwtProperties) {
+    public JwtService(JWTProperties jwtProperties) {
         this.jwtProperties = jwtProperties;
 
         String secret = jwtProperties.getSecret();
@@ -48,18 +48,6 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String generateRefreshToken(String username) {
-        Instant now = Instant.now();
-        Instant expiry = now.plusSeconds(jwtProperties.getRefreshTokenExpiration().toSeconds());
-
-        return Jwts.builder()
-                .subject(username)
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(expiry))
-                .signWith(key, Jwts.SIG.HS256)
-                .compact();
-    }
-
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
@@ -75,7 +63,7 @@ public class JwtUtil {
     @SuppressWarnings("unchecked")
     public Set<DPMRole> extractRoles(String token) {
         Claims claims = getClaims(token);
-        List<String> roleNames = claims.get("roles", List.class);
+        List<String> roleNames = claims.get(ROLES, List.class);
         Set<String> roles = new HashSet<>(roleNames);
 
 

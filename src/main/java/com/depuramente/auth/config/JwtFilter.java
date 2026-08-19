@@ -1,7 +1,7 @@
 package com.depuramente.auth.config;
 
 
-import com.depuramente.auth.util.JwtUtil;
+import com.depuramente.auth.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,10 +21,10 @@ public class JwtFilter extends OncePerRequestFilter {
     private static final String AUTH_HEADER = "Authorization";
     private static final String AUTH_TYPE = "Bearer ";
 
-    private final JwtUtil jwtUtil;
+    private final JwtService jwtService;
 
-    public JwtFilter(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
+    public JwtFilter(JwtService jwtService) {
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -37,17 +37,16 @@ public class JwtFilter extends OncePerRequestFilter {
         String header = request.getHeader(AUTH_HEADER);
 
         if (header != null && header.startsWith(AUTH_TYPE)) {
-            String token = header.substring(7);
+            String token = header.substring(AUTH_TYPE.length());
 
-            //TODO: check why token has a white space
-            if(token.contains(" ")) {
+            if (token.contains(" ")) {
                 logger.info(token);
             }
 
-            if (jwtUtil.validateToken(token)) {
-                String username = jwtUtil.extractUsername(token);
+            if (jwtService.validateToken(token)) {
+                String username = jwtService.extractUsername(token);
                 Set<SimpleGrantedAuthority> authorities =
-                        jwtUtil.extractRoles(token).stream()
+                        jwtService.extractRoles(token).stream()
                                 .map(role -> new SimpleGrantedAuthority(role.name()))
                                 .collect(Collectors.toSet());
 
