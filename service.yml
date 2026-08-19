@@ -1,0 +1,18 @@
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: YOUR_EMAIL
+    password: YOUR_APP_PASSWORD
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+jwt:
+  secret: Lj8a9z4CCUC4OaFK+QHTOCbFCcEbeAYbyk7Ruz+IRuQ=
+  expiration: 15m
+  refreshExpiration: 7d
+
+dynamodb:
+  region: "us-east-1"
+  endpoint: "http://localhost:8000"

@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: authorization-service
+
+jwt:
+  secret: use-a-32-bytes-HS256-secret
+  expiration: 5m
+  refreshExpiration: 7d
+
+aws:
+  region: "us-east-1"
+  endpoint: "http://localhost:8000"
