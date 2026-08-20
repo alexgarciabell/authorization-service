@@ -107,7 +107,7 @@ class AuthServiceTest {
         when(passwordEncoder.matches("Password1!", "encoded-password")).thenReturn(true);
         when(jwtService.generateAccessToken("user@example.com", roles)).thenReturn("access-jwt");
         when(refreshTokenService.create("user@example.com")).thenReturn(refreshToken);
-        when(jwtProperties.getTokenExpiration()).thenReturn(Duration.ofMinutes(5));
+        when(jwtProperties.getAccessTokenExpiration()).thenReturn(Duration.ofMinutes(5));
 
         TokenResponse response = authService.login(
                 new AuthRequest("user@example.com", "Password1!"));

@@ -7,6 +7,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 import java.time.Instant;
 import java.util.Set;
 
+/** DynamoDB representation of a registered user and authorization roles. */
 @DynamoDbBean
 public class DPMUser {
 

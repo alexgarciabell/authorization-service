@@ -109,7 +109,7 @@ class JwtServiceTest {
     private static JwtService service(Duration expiration) {
         JWTProperties properties = new JWTProperties();
         properties.setSecret(SECRET);
-        properties.setTokenExpiration(expiration);
+        properties.setAccessTokenExpiration(expiration);
         return new JwtService(properties);
     }
 

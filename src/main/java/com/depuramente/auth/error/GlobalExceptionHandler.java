@@ -18,6 +18,13 @@ import java.time.Instant;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * Maps client input and authentication argument failures to a safe response.
+     *
+     * @param exception exception raised by application code
+     * @param request current HTTP request
+     * @return response containing the public status and client-facing message
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorResponse> handleIllegalArgument(
             IllegalArgumentException exception, HttpServletRequest request) {
@@ -35,12 +42,26 @@ public class GlobalExceptionHandler {
         return error(status, message, request);
     }
 
+    /**
+     * Handles malformed, expired, or incorrectly signed JWTs.
+     *
+     * @param exception JWT parsing or validation failure
+     * @param request current HTTP request
+     * @return unauthorized error response
+     */
     @ExceptionHandler(JwtException.class)
     public ResponseEntity<ApiErrorResponse> handleJwtException(
             JwtException exception, HttpServletRequest request) {
         return error(HttpStatus.UNAUTHORIZED, "The access token is invalid or expired.", request);
     }
 
+    /**
+     * Handles refresh-token lifecycle failures and unexpected runtime failures.
+     *
+     * @param exception runtime failure raised by application code
+     * @param request current HTTP request
+     * @return mapped client-safe error response
+     */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponse> handleRuntimeException(
             RuntimeException exception, HttpServletRequest request) {
@@ -57,6 +78,13 @@ public class GlobalExceptionHandler {
                 "An unexpected error occurred. Please try again later.", request);
     }
 
+    /**
+     * Handles malformed JSON and missing required request headers.
+     *
+     * @param exception request parsing or binding failure
+     * @param request current HTTP request
+     * @return bad-request error response
+     */
     @ExceptionHandler({HttpMessageNotReadableException.class, MissingRequestHeaderException.class})
     public ResponseEntity<ApiErrorResponse> handleMalformedRequest(
             Exception exception, HttpServletRequest request) {
@@ -64,6 +92,13 @@ public class GlobalExceptionHandler {
                 "The request is invalid or missing required information.", request);
     }
 
+    /**
+     * Provides a generic response without exposing internal implementation details.
+     *
+     * @param exception unexpected application failure
+     * @param request current HTTP request
+     * @return generic internal-server-error response
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnexpectedException(
             Exception exception, HttpServletRequest request) {

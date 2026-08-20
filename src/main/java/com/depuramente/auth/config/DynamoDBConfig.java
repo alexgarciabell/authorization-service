@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.net.URI;
 
+/** Creates AWS clients and typed DynamoDB tables used by the service. */
 @EnableConfigurationProperties(AwsProperties.class)
 @Configuration
 public class DynamoDBConfig {

@@ -2,6 +2,7 @@ package com.depuramente.auth.util;
 
 import java.util.regex.Pattern;
 
+/** Lightweight format validator for registration email addresses. */
 public final class EmailValidator {
 
     private static final Pattern PATTERN =

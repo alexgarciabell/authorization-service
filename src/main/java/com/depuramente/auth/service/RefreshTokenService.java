@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
 
+/** Manages opaque refresh-token creation, validation, rotation, and revocation. */
 @Service
 public class RefreshTokenService {
 
@@ -22,6 +23,11 @@ public class RefreshTokenService {
         this.jwtProperties = jwtProperties;
     }
 
+    /**
+     * Creates and persists a random active refresh token.
+     * @param username owner of the token
+     * @return newly persisted refresh token
+     */
     public RefreshToken create(String username) {
         var expiresAt = Instant.now().plusSeconds(jwtProperties.getRefreshTokenExpiration().toSeconds());
         var token = new RefreshToken(
@@ -35,6 +41,13 @@ public class RefreshTokenService {
         return token;
     }
 
+    /**
+     * Checks that a token exists, is active, and has not expired.
+     * @param token opaque token value supplied by a client
+     * @return validated persisted token
+     * @throws IllegalArgumentException when the token does not exist
+     * @throws RuntimeException when the token is revoked or expired
+     */
     public RefreshToken validate(String token) {
         var stored = refreshRepository.findByToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
@@ -50,6 +63,11 @@ public class RefreshTokenService {
         return stored;
     }
 
+    /**
+     * Revokes and persists one refresh token.
+     * @param tokenValue opaque token value to revoke
+     * @throws IllegalArgumentException when the token does not exist
+     */
     public void revoke(String tokenValue) {
         RefreshToken stored = refreshRepository.findByToken(tokenValue)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
@@ -59,6 +77,10 @@ public class RefreshTokenService {
 
     }
 
+    /**
+     * Revokes every refresh token owned by a user.
+     * @param username owner whose tokens should be revoked
+     */
     public void revokeAllForUser(String username) {
         var tokens = refreshRepository.findAllByUsername(username);
         tokens.forEach(t -> {
@@ -67,6 +89,10 @@ public class RefreshTokenService {
         });
     }
 
+    /**
+     * Generates a cryptographically random URL-safe opaque token.
+     * @return random token value without padding characters
+     */
     public String generateOpaqueToken() {
         byte[] bytes = new byte[64];
         secureRandom.nextBytes(bytes);

@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/** Extracts bearer tokens and establishes JWT authentication for requests. */
 @Component
 public class JwtFilter extends OncePerRequestFilter {
     private static final String AUTH_HEADER = "Authorization";

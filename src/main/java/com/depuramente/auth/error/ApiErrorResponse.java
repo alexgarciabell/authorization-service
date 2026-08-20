@@ -10,6 +10,7 @@ import java.time.Instant;
  * @param error short HTTP status description
  * @param message safe, user-facing error message
  * @param path request path that produced the error
+ * @since 1.0
  */
 public record ApiErrorResponse(
         Instant timestamp,

@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+/** Loads persisted users for Spring Security authentication. */
 @Service
 public class UserPrincipalImpl implements UserDetailsService {
 
@@ -17,6 +18,13 @@ public class UserPrincipalImpl implements UserDetailsService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Loads a user and adapts it to Spring Security.
+     *
+     * @param id username used to locate the user
+     * @return Spring Security user details
+     * @throws UsernameNotFoundException when no user matches the ID
+     */
     @Override
     @Nonnull
     public UserDetails loadUserByUsername(@Nonnull String id) throws UsernameNotFoundException {
