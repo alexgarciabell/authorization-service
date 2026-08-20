@@ -5,6 +5,7 @@ import com.depuramente.auth.dto.AuthRequest;
 import com.depuramente.auth.dto.RegisterRequest;
 import com.depuramente.auth.dto.RegisterResponse;
 import com.depuramente.auth.dto.TokenResponse;
+import com.depuramente.auth.dto.ValidateResponse;
 import com.depuramente.auth.model.DPMRole;
 import com.depuramente.auth.model.DPMUser;
 import com.depuramente.auth.model.RefreshToken;
@@ -196,6 +197,54 @@ class AuthServiceTest {
         verifyNoInteractions(jwtService);
         verify(refreshTokenService, never()).revoke(any());
         verify(refreshTokenService, never()).create(any());
+    }
+
+    @Test
+    void validateExtractsClaimsAndReturnsValidationResult() {
+        Set<DPMRole> roles = Set.of(DPMRole.ROLE_USER);
+        when(jwtService.extractUsername("access-jwt")).thenReturn("user@example.com");
+        when(jwtService.extractRoles("access-jwt")).thenReturn(roles);
+        when(jwtService.validateToken("access-jwt")).thenReturn(true);
+
+        ValidateResponse response = authService.validate("Bearer access-jwt");
+
+        assertEquals(new ValidateResponse(true, "user@example.com", roles), response);
+        verify(jwtService).extractUsername("access-jwt");
+        verify(jwtService).extractRoles("access-jwt");
+        verify(jwtService).validateToken("access-jwt");
+    }
+
+    @Test
+    void logoutRevokesTheSuppliedRefreshToken() {
+        authService.logout("refresh-value");
+
+        verify(refreshTokenService).revoke("refresh-value");
+    }
+
+    @Test
+    void logoutAllExtractsUserAndRevokesAllUserTokens() {
+        DPMUser user = user("user@example.com", Set.of(DPMRole.ROLE_USER));
+        when(jwtService.extractUsername("access-jwt")).thenReturn("user@example.com");
+        when(userRepository.findById("user@example.com")).thenReturn(Optional.of(user));
+
+        authService.logoutAll("Bearer access-jwt");
+
+        verify(jwtService).extractUsername("access-jwt");
+        verify(userRepository).findById("user@example.com");
+        verify(refreshTokenService).revokeAllForUser("user@example.com");
+    }
+
+    @Test
+    void logoutAllRejectsUnknownUser() {
+        when(jwtService.extractUsername("access-jwt")).thenReturn("missing@example.com");
+        when(userRepository.findById("missing@example.com")).thenReturn(Optional.empty());
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> authService.logoutAll("Bearer access-jwt"));
+
+        assertEquals("User not found", exception.getMessage());
+        verify(refreshTokenService, never()).revokeAllForUser(any());
     }
 
     private static DPMUser user(String username, Set<DPMRole> roles) {

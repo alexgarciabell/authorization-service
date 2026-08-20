@@ -1,6 +1,7 @@
 package com.depuramente.auth.controller;
 
 import com.depuramente.auth.dto.AuthRequest;
+import com.depuramente.auth.dto.LogoutRequest;
 import com.depuramente.auth.dto.RegisterRequest;
 import com.depuramente.auth.dto.RegisterResponse;
 import com.depuramente.auth.dto.TokenResponse;
@@ -21,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -90,6 +92,45 @@ class AuthControllerFunctionalTest {
                 .andExpect(jsonPath("$.username").value("user@example.com"));
 
         verify(authService).refresh(oldRefreshToken);
+    }
+
+    @Test
+    void validateReturnsTokenValidationResponse() throws Exception {
+        when(authService.validate("Bearer access-jwt"))
+                .thenReturn(new com.depuramente.auth.dto.ValidateResponse(
+                        true, "user@example.com", Set.of(DPMRole.ROLE_USER)));
+
+        mockMvc.perform(get("/auth/validate")
+                        .header("Authorization", "Bearer access-jwt"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isValid").value(true))
+                .andExpect(jsonPath("$.username").value("user@example.com"))
+                .andExpect(jsonPath("$.roles[0]").value("ROLE_USER"));
+
+        verify(authService).validate("Bearer access-jwt");
+    }
+
+    @Test
+    void logoutReturnsOkAndRevokesRefreshToken() throws Exception {
+        LogoutRequest request = new LogoutRequest("refresh-value");
+
+        mockMvc.perform(post("/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
+
+        verify(authService).logout("refresh-value");
+    }
+
+    @Test
+    void logoutAllReturnsOkAndUsesAuthorizationHeader() throws Exception {
+        mockMvc.perform(post("/auth/logout/all")
+                        .header("Authorization", "Bearer access-jwt"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
+
+        verify(authService).logoutAll("Bearer access-jwt");
     }
 
     private static TokenResponse tokenResponse() {

@@ -14,6 +14,7 @@ public class JWTProperties {
 
     @DurationUnit(ChronoUnit.SECONDS)
     private Duration tokenExpiration;
+
     @DurationUnit(ChronoUnit.SECONDS)
     private Duration refreshTokenExpiration;
 
