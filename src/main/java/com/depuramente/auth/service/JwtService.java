@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/** Creates, validates, and reads claims from signed access JWTs. */
 @Component
 public class JwtService {
     private final static Logger LOG = LoggerFactory.getLogger(JwtService.class);
@@ -35,9 +36,16 @@ public class JwtService {
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
+    /**
+     * Creates a signed access token.
+     * @param username subject placed in the token
+     * @param roles authorization roles placed in the token
+     * @return compact signed JWT
+     * @throws IllegalStateException when the configured signing secret is invalid
+     */
     public String generateAccessToken(String username, Set<DPMRole> roles) {
         Instant now = Instant.now();
-        Instant expiry = now.plusSeconds(jwtProperties.getTokenExpiration().toSeconds());
+        Instant expiry = now.plusSeconds(jwtProperties.getAccessTokenExpiration().toSeconds());
 
         return Jwts.builder()
                 .subject(username)
@@ -48,6 +56,11 @@ public class JwtService {
                 .compact();
     }
 
+    /**
+     * Verifies the signature and time-based claims of a token.
+     * @param token compact JWT to verify
+     * @return {@code true} when the token is valid; {@code false} otherwise
+     */
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
@@ -60,6 +73,13 @@ public class JwtService {
         }
     }
 
+    /**
+     * Reads the role claim from a verified token.
+     * @param token compact JWT containing a roles claim
+     * @return roles encoded in the token
+     * @throws JwtException when the token cannot be parsed or verified
+     * @throws IllegalArgumentException when a role claim is malformed
+     */
     @SuppressWarnings("unchecked")
     public Set<DPMRole> extractRoles(String token) {
         Claims claims = getClaims(token);
@@ -80,6 +100,12 @@ public class JwtService {
                 .getPayload();
     }
 
+    /**
+     * Reads the subject claim from a verified token.
+     * @param token compact JWT to parse
+     * @return username stored as the token subject
+     * @throws JwtException when the token cannot be parsed or verified
+     */
     public String extractUsername(String token) {
         return getClaims(token).getSubject();
     }

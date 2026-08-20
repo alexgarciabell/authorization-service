@@ -13,6 +13,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import java.util.List;
 import java.util.Optional;
 
+/** DynamoDB Enhanced Client implementation of {@link RefreshTokenRepository}. */
 @Repository
 public class RefreshTokenRepositoryImpl implements RefreshTokenRepository {
 

@@ -18,6 +18,7 @@ import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.List;
 
+/** Configures stateless security, CORS, password encoding, and JWT filtering. */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {

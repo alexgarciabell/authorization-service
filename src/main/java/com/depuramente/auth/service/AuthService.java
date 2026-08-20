@@ -97,7 +97,7 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(user.getUsername(), user.getRoles());
         RefreshToken refreshToken = refreshTokenService.create(user.getUsername());
 
-        return new TokenResponse(accessToken, refreshToken.getToken(), jwtProperties.getTokenExpiration().getSeconds(), "Bearer", user.getUsername(), user.getRoles());
+        return new TokenResponse(accessToken, refreshToken.getToken(), jwtProperties.getAccessTokenExpiration().getSeconds(), "Bearer", user.getUsername(), user.getRoles());
 
     }
 
@@ -105,6 +105,11 @@ public class AuthService {
      * Validates a refresh token and issues a new access/refresh-token pair.
      * The username is taken from the persisted refresh token rather than from
      * the request, so a caller cannot refresh a token for another user.
+     *
+     * @param refreshToken opaque refresh token supplied by the client
+     * @return newly issued access and rotated refresh tokens
+     * @throws IllegalArgumentException when the token's user cannot be found
+     * @throws RuntimeException when the refresh token is invalid, revoked, or expired
      */
     public TokenResponse refresh(String refreshToken) {
         RefreshToken currentToken = refreshTokenService.validate(refreshToken);
@@ -119,32 +124,67 @@ public class AuthService {
         return new TokenResponse(
                 accessToken,
                 nextRefreshToken.getToken(),
-                jwtProperties.getTokenExpiration().getSeconds(),
+                jwtProperties.getAccessTokenExpiration().getSeconds(),
                 "Bearer",
                 user.getUsername(),
                 user.getRoles()
         );
     }
 
+    /**
+     * Validates an access token and returns its claims.
+     *
+     * @param authHeader HTTP Authorization header containing a bearer token
+     * @return validation result with username and roles
+     * @throws IllegalArgumentException when the header or token is invalid
+     */
     public ValidateResponse validate(String authHeader) {
-        String accessToken = authHeader.replace(AUTH_KEY, "").trim();
+        String accessToken = extractAccessToken(authHeader);
+        if (!jwtService.validateToken(accessToken)) {
+            throw new IllegalArgumentException("Invalid access token");
+        }
 
         String username = jwtService.extractUsername(accessToken);
         Set<DPMRole> roles = jwtService.extractRoles(accessToken);
-        boolean isValid = jwtService.validateToken(accessToken);
 
-        return new ValidateResponse(isValid, username, roles);
+        return new ValidateResponse(true, username, roles);
     }
 
+    /**
+     * Revokes one refresh token.
+     *
+     * @param refreshToken opaque refresh token to revoke
+     * @throws IllegalArgumentException when the token does not exist
+     */
     public void logout(String refreshToken) {
         refreshTokenService.revoke(refreshToken);
     }
 
+    /**
+     * Revokes all refresh tokens belonging to the authenticated user.
+     *
+     * @param authHeader HTTP Authorization header containing a bearer token
+     * @throws IllegalArgumentException when the header, token, or user is invalid
+     */
     public void logoutAll(String authHeader) {
-        String accessToken = authHeader.substring(AUTH_KEY.length()).trim();
+        String accessToken = extractAccessToken(authHeader);
+        if (!jwtService.validateToken(accessToken)) {
+            throw new IllegalArgumentException("Invalid access token");
+        }
         String username = jwtService.extractUsername(accessToken);
         var user = userRepo.findById(username).orElseThrow(() -> new IllegalArgumentException("User not found"));
         refreshTokenService.revokeAllForUser(user.getUsername());
+    }
+
+    private String extractAccessToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith(AUTH_KEY)) {
+            throw new IllegalArgumentException("Authorization header is required");
+        }
+        String accessToken = authHeader.substring(AUTH_KEY.length()).trim();
+        if (accessToken.isBlank()) {
+            throw new IllegalArgumentException("Authorization header is required");
+        }
+        return accessToken;
     }
 
 }

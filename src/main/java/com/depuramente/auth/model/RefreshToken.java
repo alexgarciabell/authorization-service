@@ -7,6 +7,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 
 import java.time.Instant;
 
+/** Persisted opaque refresh token, including ownership and revocation state. */
 @DynamoDbBean
 public class RefreshToken {
 

@@ -2,6 +2,7 @@ package com.depuramente.auth.util;
 
 import java.util.regex.Pattern;
 
+/** Validator for the service's supported registration password policy. */
 public final class PasswordValidator {
 
     private static final Pattern PATTERN =

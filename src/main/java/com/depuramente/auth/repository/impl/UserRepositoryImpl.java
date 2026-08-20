@@ -7,6 +7,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 
 import java.util.Optional;
 
+/** DynamoDB Enhanced Client implementation of {@link UserRepository}. */
 @Repository
 public class UserRepositoryImpl implements UserRepository {
 
