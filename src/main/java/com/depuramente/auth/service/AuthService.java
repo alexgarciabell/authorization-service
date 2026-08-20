@@ -1,19 +1,20 @@
 package com.depuramente.auth.service;
 
 import com.depuramente.auth.config.JWTProperties;
-import com.depuramente.auth.dto.AuthRequest;
-import com.depuramente.auth.dto.RegisterRequest;
-import com.depuramente.auth.dto.RegisterResponse;
-import com.depuramente.auth.dto.TokenResponse;
+import com.depuramente.auth.dto.*;
+import com.depuramente.auth.model.DPMRole;
 import com.depuramente.auth.model.DPMUser;
 import com.depuramente.auth.model.RefreshToken;
 import com.depuramente.auth.repository.UserRepository;
 import com.depuramente.auth.util.EmailValidator;
 import com.depuramente.auth.util.PasswordValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Set;
 
 /**
  * Application service for user registration and credential-based authentication.
@@ -24,12 +25,15 @@ import java.time.Instant;
  */
 @Service
 public class AuthService {
+    private static final Logger LOG = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository userRepo;
     private final RefreshTokenService refreshTokenService;
     private final BCryptPasswordEncoder encoder;
     private final JwtService jwtService;
     private final JWTProperties jwtProperties;
+
+    private static final String AUTH_KEY = "Bearer";
 
     public AuthService(UserRepository userRepo, RefreshTokenService refreshTokenService, BCryptPasswordEncoder encoder, JwtService jwtService, JWTProperties jwtProperties) {
         this.userRepo = userRepo;
@@ -120,6 +124,27 @@ public class AuthService {
                 user.getUsername(),
                 user.getRoles()
         );
+    }
+
+    public ValidateResponse validate(String authHeader) {
+        String accessToken = authHeader.replace(AUTH_KEY, "").trim();
+
+        String username = jwtService.extractUsername(accessToken);
+        Set<DPMRole> roles = jwtService.extractRoles(accessToken);
+        boolean isValid = jwtService.validateToken(accessToken);
+
+        return new ValidateResponse(isValid, username, roles);
+    }
+
+    public void logout(String refreshToken) {
+        refreshTokenService.revoke(refreshToken);
+    }
+
+    public void logoutAll(String authHeader) {
+        String accessToken = authHeader.substring(AUTH_KEY.length()).trim();
+        String username = jwtService.extractUsername(accessToken);
+        var user = userRepo.findById(username).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        refreshTokenService.revokeAllForUser(user.getUsername());
     }
 
 }

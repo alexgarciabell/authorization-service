@@ -22,7 +22,7 @@ class AuthorizationServiceApplicationTests {
     @Test
     void jwtExpirationPropertiesAreBound() {
         org.junit.jupiter.api.Assertions.assertEquals(Duration.ofMinutes(5), jwtProperties.getTokenExpiration());
-        org.junit.jupiter.api.Assertions.assertEquals(Duration.ofDays(7), jwtProperties.getRefreshTokenExpiration());
+        org.junit.jupiter.api.Assertions.assertEquals(Duration.ofDays(1), jwtProperties.getRefreshTokenExpiration());
     }
 
 }
