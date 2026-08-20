@@ -127,13 +127,15 @@ public class AuthService {
     }
 
     public ValidateResponse validate(String authHeader) {
-        String accessToken = authHeader.replace(AUTH_KEY, "").trim();
+        String accessToken = extractAccessToken(authHeader);
+        if (!jwtService.validateToken(accessToken)) {
+            throw new IllegalArgumentException("Invalid access token");
+        }
 
         String username = jwtService.extractUsername(accessToken);
         Set<DPMRole> roles = jwtService.extractRoles(accessToken);
-        boolean isValid = jwtService.validateToken(accessToken);
 
-        return new ValidateResponse(isValid, username, roles);
+        return new ValidateResponse(true, username, roles);
     }
 
     public void logout(String refreshToken) {
@@ -141,10 +143,24 @@ public class AuthService {
     }
 
     public void logoutAll(String authHeader) {
-        String accessToken = authHeader.substring(AUTH_KEY.length()).trim();
+        String accessToken = extractAccessToken(authHeader);
+        if (!jwtService.validateToken(accessToken)) {
+            throw new IllegalArgumentException("Invalid access token");
+        }
         String username = jwtService.extractUsername(accessToken);
         var user = userRepo.findById(username).orElseThrow(() -> new IllegalArgumentException("User not found"));
         refreshTokenService.revokeAllForUser(user.getUsername());
+    }
+
+    private String extractAccessToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith(AUTH_KEY)) {
+            throw new IllegalArgumentException("Authorization header is required");
+        }
+        String accessToken = authHeader.substring(AUTH_KEY.length()).trim();
+        if (accessToken.isBlank()) {
+            throw new IllegalArgumentException("Authorization header is required");
+        }
+        return accessToken;
     }
 
 }

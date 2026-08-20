@@ -6,6 +6,7 @@ import com.depuramente.auth.dto.RegisterRequest;
 import com.depuramente.auth.dto.RegisterResponse;
 import com.depuramente.auth.dto.TokenResponse;
 import com.depuramente.auth.model.DPMRole;
+import com.depuramente.auth.error.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,9 @@ class AuthControllerFunctionalTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService)).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test
@@ -131,6 +134,43 @@ class AuthControllerFunctionalTest {
                 .andExpect(content().string(""));
 
         verify(authService).logoutAll("Bearer access-jwt");
+    }
+
+    @Test
+    void invalidCredentialsReturnStableFriendlyErrorResponse() throws Exception {
+        when(authService.login(any(AuthRequest.class)))
+                .thenThrow(new IllegalArgumentException("Invalid credentials"));
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"user@example.com\",\"password\":\"wrong\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.error").value("Unauthorized"))
+                .andExpect(jsonPath("$.message").value("Invalid credentials"))
+                .andExpect(jsonPath("$.path").value("/auth/login"));
+    }
+
+    @Test
+    void revokedRefreshTokenReturnsFriendlyErrorResponse() throws Exception {
+        when(authService.refresh("revoked-refresh"))
+                .thenThrow(new RuntimeException("Refresh token revoked"));
+
+        mockMvc.perform(post("/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"revoked-refresh\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value("The refresh token has been revoked."));
+    }
+
+    @Test
+    void missingAuthorizationHeaderReturnsFriendlyBadRequest() throws Exception {
+        mockMvc.perform(post("/auth/logout/all"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message")
+                        .value("The request is invalid or missing required information."));
     }
 
     private static TokenResponse tokenResponse() {

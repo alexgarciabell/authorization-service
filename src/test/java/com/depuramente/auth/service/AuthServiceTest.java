@@ -225,6 +225,7 @@ class AuthServiceTest {
     void logoutAllExtractsUserAndRevokesAllUserTokens() {
         DPMUser user = user("user@example.com", Set.of(DPMRole.ROLE_USER));
         when(jwtService.extractUsername("access-jwt")).thenReturn("user@example.com");
+        when(jwtService.validateToken("access-jwt")).thenReturn(true);
         when(userRepository.findById("user@example.com")).thenReturn(Optional.of(user));
 
         authService.logoutAll("Bearer access-jwt");
@@ -237,6 +238,7 @@ class AuthServiceTest {
     @Test
     void logoutAllRejectsUnknownUser() {
         when(jwtService.extractUsername("access-jwt")).thenReturn("missing@example.com");
+        when(jwtService.validateToken("access-jwt")).thenReturn(true);
         when(userRepository.findById("missing@example.com")).thenReturn(Optional.empty());
 
         IllegalArgumentException exception = assertThrows(
